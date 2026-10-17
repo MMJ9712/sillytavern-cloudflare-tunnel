@@ -1,0 +1,9 @@
+# Environment variables (Contains your secret token)
+.env
+
+# User data and chats
+config/
+data/
+
+# Docker junk
+*.log

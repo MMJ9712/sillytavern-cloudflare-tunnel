@@ -1,0 +1,42 @@
+services:
+  # The AI Application
+  sillytavern:
+    image: ghcr.io/sillytavern/sillytavern:latest
+    container_name: sillytavern
+    restart: unless-stopped
+    ports:
+      - "8000:8000" # <--- THIS IS THE CRITICAL FIX
+    volumes:
+      - ./config:/home/node/app/config:rw
+      - ./data:/home/node/app/data:rw
+    networks:
+      - st-net
+    environment:
+      - NODE_ENV=production
+      - HTTP_PROXY=http://egress-proxy:8888
+      - HTTPS_PROXY=http://egress-proxy:8888
+    depends_on:
+      - egress-proxy
+
+  # The Secure Egress Proxy
+  egress-proxy:
+    image: kalaksi/tinyproxy:latest
+    container_name: egress-proxy
+    restart: unless-stopped
+    networks:
+      - st-net
+
+  # The Cloudflare Tunnel
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflared
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
+    networks:
+      - st-net
+    depends_on:
+      - sillytavern
+
+networks:
+  st-net:
+    driver: bridge
